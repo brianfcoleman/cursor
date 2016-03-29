@@ -34,12 +34,12 @@ auto make_range(Iterator first, Iterator last) {
 
 template<typename Container>
 auto make_crange(const Container& container) {
-    return Range<typename Container::const_iterator>(container);
+    return Range<typename Container::const_iterator>(container.cbegin(), container.cend());
 }
 
 template<typename Container>
 auto make_range(Container& container) {
-    return Range<typename Container::iterator>(container);
+    return Range<typename Container::iterator>(container.begin(), container.end());
 }
 
 }

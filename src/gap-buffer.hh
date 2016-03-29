@@ -184,7 +184,7 @@ public:
 
     template<typename ElementRange>
     void replace(const_range remove_range, ElementRange insert_range) {
-        const auto position = std::distance(begin(), remove_range.begin());
+        const auto position = std::distance(cbegin(), remove_range.begin());
         const auto count = std::distance(remove_range.begin(), remove_range.end());
         replace(position, count, insert_range);
     }

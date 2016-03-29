@@ -5,6 +5,10 @@ project(cursor
     LANGUAGES CXX
 )
 
+include(FindGTest)
+enable_testing()
+find_package(GTest REQUIRED)
+
 set(gap_buffer_headers
     "gap-buffer.hh"
     "range.hh"
@@ -22,6 +26,11 @@ add_executable(gap_buffer_test
 target_include_directories(gap_buffer_test
     PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
+target_link_libraries(gap_buffer_test
+    PRIVATE
+    "${GTEST_BOTH_LIBRARIES}"
 )
 
 set_target_properties(gap_buffer_test

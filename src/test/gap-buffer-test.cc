@@ -1,34 +1,125 @@
 #include "gap-buffer.hh"
 #include "range.hh"
 
-#include <iostream>
-#include <iterator>
-#include <string>
+#include <gtest/gtest.h>
 
-namespace {
-using cursor::GapBuffer;
-std::string to_string(const GapBuffer<char>& gap_buffer) {
-    std::string message;
-    for (const auto c : gap_buffer) {
-        message.push_back(c);
-    }
-    return message;
+#include <algorithm>
+#include <iterator>
+
+namespace cursor {
+namespace test {
+namespace gap_buffer {
+void validate_gap_buffer_content(const GapBuffer<char>& gap_buffer, const std::string& expected_content) {
+    std::string gap_buffer_content;
+    std::copy(gap_buffer.cbegin(), gap_buffer.cend(), std::back_inserter(gap_buffer_content));
+    ASSERT_EQ(expected_content, gap_buffer_content);
 }
+
+void insert_before_position() {
+    GapBuffer<char> gap_buffer;
+    std::string content = "Hello World!";
+    gap_buffer.insert(make_crange(content), 0);
+    validate_gap_buffer_content(gap_buffer, content);
+}
+
+void insert_before_iterator() {
+    GapBuffer<char> gap_buffer;
+    std::string content = "Hello World!";
+    gap_buffer.insert(make_crange(content), gap_buffer.cbegin());
+    validate_gap_buffer_content(gap_buffer, content);
+}
+
+void append() {
+    GapBuffer<char> gap_buffer;
+    std::string content = "Hello World!";
+    gap_buffer.append(make_crange(content));
+    validate_gap_buffer_content(gap_buffer, content);
+}
+
+void remove_at_position() {
+    GapBuffer<char> gap_buffer;
+    std::string content = "Hello World";
+    gap_buffer.append(content);
+    validate_gap_buffer_content(gap_buffer, content);
+    gap_buffer.remove(0, content.size());
+    content = "";
+    validate_gap_buffer_content(gap_buffer, content);
+}
+
+void remove_at_iterator() {
+    GapBuffer<char> gap_buffer;
+    std::string content = "Hello World!";
+    gap_buffer.append(content);
+    validate_gap_buffer_content(gap_buffer, content);
+    gap_buffer.remove(make_crange(gap_buffer));
+    content = "";
+    validate_gap_buffer_content(gap_buffer, content);
+}
+
+void replace_at_position() {
+    GapBuffer<char> gap_buffer;
+    std::string content = "Hello World!";
+    gap_buffer.append(content);
+    validate_gap_buffer_content(gap_buffer, content);
+    std::string new_content = "Goodbye World!";
+    gap_buffer.replace(0, content.size(), make_crange(new_content));
+    validate_gap_buffer_content(gap_buffer, new_content);
+}
+
+void replace_at_iterator() {
+    GapBuffer<char> gap_buffer;
+    std::string content = "Hello World!";
+    gap_buffer.append(content);
+    validate_gap_buffer_content(gap_buffer, content);
+    std::string new_content = "Goodbye World!";
+    gap_buffer.replace(make_crange(gap_buffer), make_crange(new_content));
+    validate_gap_buffer_content(gap_buffer, new_content);
+}
+
+void size() {
+    GapBuffer<char> gap_buffer;
+    std::string content = "Hello World!";
+    gap_buffer.append(content);
+    validate_gap_buffer_content(gap_buffer, content);
+    ASSERT_EQ(content.size(), gap_buffer.size());
+}
+}
+}
+}
+
+TEST(gap_buffer, insert_before_position) {
+    cursor::test::gap_buffer::insert_before_position();
+}
+
+TEST(gap_buffer, insert_before_iterator) {
+    cursor::test::gap_buffer::insert_before_iterator();
+}
+
+TEST(gap_buffer, append) {
+    cursor::test::gap_buffer::append();
+}
+
+TEST(gap_buffer, remove_at_position) {
+    cursor::test::gap_buffer::remove_at_position();
+}
+
+TEST(gap_buffer, remove_at_iterator) {
+    cursor::test::gap_buffer::remove_at_iterator();
+}
+
+TEST(gap_buffer, replace_at_position) {
+    cursor::test::gap_buffer::replace_at_position();
+}
+
+TEST(gap_buffer, replace_at_iterator) {
+    cursor::test::gap_buffer::replace_at_iterator();
+}
+
+TEST(gap_buffer, size) {
+    cursor::test::gap_buffer::size();
 }
 
 int main(int argc, char* argv[]) {
-    using namespace cursor;
-    GapBuffer<char> gap_buffer;
-    std::cout << to_string(gap_buffer) << std::endl;
-    std::string message = "world";
-    gap_buffer.append(make_range(message.begin(), message.end()));
-    std::cout << to_string(gap_buffer) << std::endl;
-    message = "hello";
-    gap_buffer.insert(make_range(message.begin(), message.end()), 0);
-    std::cout << to_string(gap_buffer) << std::endl;
-    auto element = gap_buffer.cbegin();
-    std::advance(element, message.size());
-    message = " ";
-    gap_buffer.insert(make_range(message.begin(), message.end()), element);
-    std::cout << to_string(gap_buffer) << std::endl;
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }
