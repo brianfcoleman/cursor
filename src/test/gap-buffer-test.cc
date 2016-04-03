@@ -7,6 +7,7 @@
 #include <iterator>
 #include <random>
 #include <stdexcept>
+#include <tuple>
 
 namespace cursor {
 namespace test {
@@ -143,24 +144,34 @@ auto replace_at_end(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, int 
 
 template<typename RandomEngine, typename ElementAccessor>
 auto make_fair_random_distribution(RandomEngine& random_engine, ElementAccessor&& access_element, int element_count, int access_count) {
-    std::vector<int> access_tracker;
-    access_tracker.resize(element_count, access_count);
+    std::vector<std::tuple<int, int>> access_tracker;
+    for (int element_index = 0; element_index < element_count; ++element_index) {
+        access_tracker.push_back(std::make_tuple(access_count, element_index));
+    }
     std::uniform_int_distribution<> distribution{0, element_count - 1};
     return [&random_engine, element_count, access_element = std::move(access_element), access_tracker = std::move(access_tracker), distribution = std::move(distribution)]() mutable {
         if (element_count == 0) {
             throw std::logic_error("No more accesses permitted");
         }
         int element = distribution(random_engine);
-        int& access_count = access_tracker.at(element);
+        int access_count = 0;
+        int element_index = 0;
+        std::tie(access_count, element_index) = access_tracker.at(element);
         access_count -= 1;
+        access_tracker.at(element) = std::make_tuple(access_count, element_index);
         if (access_count == 0) {
-            std::stable_partition(access_tracker.begin(), access_tracker.end(), [](int access_count) { return access_count > 0; });
+            std::stable_partition(access_tracker.begin(), access_tracker.end(), [](const auto& tracked_access) {
+                int element_index = 0;
+                int access_count = 0;
+                std::tie(access_count, element_index) = tracked_access;
+                return access_count > 0;
+            });
             element_count -= 1;
             if (element_count > 0) {
                 distribution = std::uniform_int_distribution<>{0, element_count - 1};
             }
         }
-        return access_element(element);
+        return access_element(element_index);
     };
 }
 }
