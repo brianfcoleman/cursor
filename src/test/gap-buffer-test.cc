@@ -146,7 +146,7 @@ auto insert(std::vector<char>& buffer, Position position, const std::string& wor
     buffer.insert(buffer.begin() + position, word.begin(), word.end());
 }
 
-auto insert(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, Position position, const std::string& word)
+auto insert_buffer_operation(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, Position position, const std::string& word)
 {
     insert(gap_buffer, position, word);
     insert(gap_buffer, position, word);
@@ -293,14 +293,14 @@ using CountWordSignature = Signature<CharGapBuffer, CharBuffer, Count, Word>;
 
 template <typename... Arguments> auto make_signature(void operation(Arguments...))
 {
-    return Signature<std::remove_reference_t<std::remove_cv_t<Arguments> >...>{};
+    return Signature<std::remove_const_t<std::remove_reference_t<Arguments>>...>{};
 }
 
 template <typename RandomPositionGenerator, typename RandomCountGenerator, typename RandomWordGenerator,
     typename BufferOperation>
 auto make_random_buffer_operation(RandomPositionGenerator generate_random_position,
     RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
-    BufferOperation&& operate_on_buffer, PositionWordSignature signature)
+    BufferOperation operate_on_buffer, PositionWordSignature signature)
 {
     return [operate_on_buffer, &generate_random_position, &generate_random_word](CharGapBuffer& gap_buffer, CharBuffer& buffer) {
         const auto word_count = 1;
@@ -315,7 +315,7 @@ template <typename RandomPositionGenerator, typename RandomCountGenerator, typen
     typename BufferOperation>
 auto make_random_buffer_operation(RandomPositionGenerator generate_random_position,
     RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
-    BufferOperation&& operate_on_buffer, WordSignature signature)
+    BufferOperation operate_on_buffer, WordSignature signature)
 {
     return [operate_on_buffer, &generate_random_word](CharGapBuffer& gap_buffer, CharBuffer& buffer) {
         const auto word_count = 1;
@@ -329,7 +329,7 @@ template <typename RandomPositionGenerator, typename RandomCountGenerator, typen
     typename BufferOperation>
 auto make_random_buffer_operation(RandomPositionGenerator generate_random_position,
     RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
-    BufferOperation&& operate_on_buffer, PositionCountSignature signature)
+    BufferOperation operate_on_buffer, PositionCountSignature signature)
 {
     return [operate_on_buffer, &generate_random_position, &generate_random_count](CharGapBuffer& gap_buffer, CharBuffer& buffer) {
         const auto word_count = 0;
@@ -344,7 +344,7 @@ template <typename RandomPositionGenerator, typename RandomCountGenerator, typen
     typename BufferOperation>
 auto make_random_buffer_operation(RandomPositionGenerator generate_random_position,
     RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
-    BufferOperation&& operate_on_buffer, CountSignature signature)
+    BufferOperation operate_on_buffer, CountSignature signature)
 {
     return [operate_on_buffer, &generate_random_count](CharGapBuffer& gap_buffer, CharBuffer& buffer) {
         const auto word_count = 0;
@@ -358,7 +358,7 @@ template <typename RandomPositionGenerator, typename RandomCountGenerator, typen
     typename BufferOperation>
 auto make_random_buffer_operation(RandomPositionGenerator generate_random_position,
     RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
-    BufferOperation&& operate_on_buffer, PositionCountWordSignature signature)
+    BufferOperation operate_on_buffer, PositionCountWordSignature signature)
 {
     return [operate_on_buffer, &generate_random_position, &generate_random_count, &generate_random_word](CharGapBuffer& gap_buffer, CharBuffer& buffer) {
         const auto word_count = 0;
@@ -374,7 +374,7 @@ template <typename RandomPositionGenerator, typename RandomCountGenerator, typen
     typename BufferOperation>
 auto make_random_buffer_operation(RandomPositionGenerator generate_random_position,
     RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
-    BufferOperation&& operate_on_buffer, CountWordSignature signature)
+    BufferOperation operate_on_buffer, CountWordSignature signature)
 {
     return [operate_on_buffer, &generate_random_count, &generate_random_word](CharGapBuffer& gap_buffer, CharBuffer& buffer) {
         const auto word_count = 0;
@@ -389,18 +389,18 @@ template <typename RandomPositionGenerator, typename RandomCountGenerator, typen
     typename BufferOperation>
 auto make_random_buffer_operation(RandomPositionGenerator generate_random_position,
     RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
-    BufferOperation&& operate_on_buffer)
+    BufferOperation operate_on_buffer)
 {
-    using Signature = decltype(make_signature(operate_on_buffer)());
+    using BufferOperationSignature = decltype(make_signature(operate_on_buffer));
     return make_random_buffer_operation(
-        generate_random_position, generate_random_count, generate_random_word, operate_on_buffer, Signature{});
+        generate_random_position, generate_random_count, generate_random_word, operate_on_buffer, BufferOperationSignature{});
 }
 
 template <typename RandomPositionGenerator, typename RandomCountGenerator, typename RandomWordGenerator,
     typename BufferOperation>
 auto make_random_buffer_operation_sequence(RandomPositionGenerator generate_random_position,
     RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
-    BufferOperation&& operate_on_buffer, int sequence_count, PositionWordSignature signature)
+    BufferOperation operate_on_buffer, int sequence_count, PositionWordSignature signature)
 {
     return [operate_on_buffer, sequence_count, &generate_random_position, &generate_random_word](
         CharGapBuffer& gap_buffer, CharBuffer& buffer) {
@@ -419,7 +419,7 @@ template <typename RandomPositionGenerator, typename RandomCountGenerator, typen
     typename BufferOperation>
 auto make_random_buffer_operation_sequence(RandomPositionGenerator generate_random_position,
     RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
-    BufferOperation&& operate_on_buffer, int sequence_count, PositionCountSignature signature)
+    BufferOperation operate_on_buffer, int sequence_count, PositionCountSignature signature)
 {
     return [operate_on_buffer, sequence_count, &generate_random_position, &generate_random_count](
         CharGapBuffer& gap_buffer, CharBuffer& buffer) {
@@ -438,7 +438,7 @@ template <typename RandomPositionGenerator, typename RandomCountGenerator, typen
     typename BufferOperation>
 auto make_random_buffer_operation_sequence(RandomPositionGenerator generate_random_position,
     RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
-    BufferOperation&& operate_on_buffer, int sequence_count, PositionCountWordSignature signature)
+    BufferOperation operate_on_buffer, int sequence_count, PositionCountWordSignature signature)
 {
     return [operate_on_buffer, sequence_count, &generate_random_position, &generate_random_count,
         &generate_random_word](CharGapBuffer& gap_buffer, CharBuffer& buffer) {
@@ -458,25 +458,25 @@ template <typename RandomPositionGenerator, typename RandomCountGenerator, typen
     typename BufferOperation>
 auto make_random_buffer_operation_sequence(RandomPositionGenerator generate_random_position,
     RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
-    BufferOperation&& operate_on_buffer, int sequence_count)
+    BufferOperation operate_on_buffer, int sequence_count)
 {
-    using Signature = decltype(make_signature(operate_on_buffer)());
+    using BufferOperationSignature = decltype(make_signature(operate_on_buffer));
     return make_random_buffer_operation_sequence(generate_random_position, generate_random_count,
-        generate_random_word, operate_on_buffer, sequence_count, Signature{});
+        generate_random_word, operate_on_buffer, sequence_count, BufferOperationSignature{});
 }
 
 template <typename RandomPositionGenerator, typename RandomCountGenerator, typename RandomWordGenerator,
     typename BufferOperation>
 auto make_random_buffer_operation_sequences(RandomPositionGenerator generate_random_position,
     RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
-    BufferOperation&& operate_on_buffer, int min_sequence_count, int max_sequence_count)
+    BufferOperation operate_on_buffer, int min_sequence_count, int max_sequence_count)
 {
-    using Signature = decltype(make_signature(operate_on_buffer)());
+    using BufferOperationSignature = decltype(make_signature(operate_on_buffer));
     const auto sequences_count = max_sequence_count - min_sequence_count + 1;
     std::vector<std::function<void(CharGapBuffer&, CharBuffer&)> > sequences;
     for (auto sequence_count = min_sequence_count; sequence_count <= max_sequence_count; ++sequence_count) {
         sequences.push_back(make_random_buffer_operation_sequence(generate_random_position, generate_random_count,
-            generate_random_word, operate_on_buffer, sequence_count, Signature{}));
+            generate_random_word, operate_on_buffer, sequence_count, BufferOperationSignature{}));
     }
     return sequences;
 }
@@ -524,7 +524,7 @@ auto make_fair_random_distribution(
 }
 }
 
-void random_word_operations()
+void generate_random_words()
 {
     std::mt19937 random_engine;
     int min_word_size = 0;
@@ -544,6 +544,25 @@ void random_word_operations()
     }
     ASSERT_TRUE(std::all_of(
         word_size_tracker.begin(), word_size_tracker.end(), [word_count](auto count) { return count == word_count; }));
+}
+
+void random_buffer_operations()
+{
+    std::mt19937 random_engine;
+    int min_word_size = 0;
+    int max_word_size = 8;
+    int word_size_count = max_word_size - min_word_size + 1;
+    auto generate_random_word = make_random_word_generators(random_engine, alphabet(), min_word_size, max_word_size);
+    int word_count = 1024;
+    auto generate_fair_random_word
+        = make_fair_random_distribution(random_engine, generate_random_word, word_size_count, word_count);
+    int total_word_count = word_count * word_size_count;
+    auto generate_random_position = make_random_position_generator(random_engine);
+    auto generate_random_count = make_random_count_generator(random_engine);
+    using BufferOperation = std::function<void(CharGapBuffer&, CharBuffer&)>;
+    std::vector<BufferOperation> random_buffer_operations;
+    random_buffer_operations.push_back(make_random_buffer_operation(
+        generate_random_position, generate_random_count, generate_fair_random_word, insert_buffer_operation));
 }
 
 void validate_gap_buffer_content(const GapBuffer<char>& gap_buffer, const std::string& expected_content)
@@ -648,7 +667,7 @@ TEST(gap_buffer, replace_at_iterator) { cursor::test::gap_buffer::replace_at_ite
 
 TEST(gap_buffer, size) { cursor::test::gap_buffer::size(); }
 
-TEST(random_word_generator, random_word_operations) { cursor::test::gap_buffer::random_word_operations(); }
+TEST(random_word_generator, generate_random_words) { cursor::test::gap_buffer::generate_random_words(); }
 
 int main(int argc, char* argv[])
 {
