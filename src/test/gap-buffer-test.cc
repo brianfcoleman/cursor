@@ -105,18 +105,23 @@ auto validate_buffers(const GapBuffer<char>& gap_buffer, const std::vector<char>
     ASSERT_EQ(gap_buffer_content, buffer_content);
 }
 
+namespace operation {
+namespace detail {
+auto insert(GapBuffer<char>& gap_buffer, Position position, const std::string& word)
+{
+    gap_buffer.insert(make_crange(word), position);
+}
+
+auto insert(std::vector<char>& buffer, Position position, const std::string& word)
+{
+    buffer.insert(buffer.begin() + position, word.begin(), word.end());
+}
+
 auto insert_at_start(GapBuffer<char>& gap_buffer, const std::string& word) { gap_buffer.insert(make_crange(word), 0); }
 
 auto insert_at_start(std::vector<char>& buffer, const std::string& word)
 {
     buffer.insert(buffer.begin(), word.begin(), word.end());
-}
-
-auto insert_at_start(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, const std::string& word)
-{
-    insert_at_start(gap_buffer, word);
-    insert_at_start(buffer, word);
-    validate_buffers(gap_buffer, buffer);
 }
 
 auto insert_at_end(GapBuffer<char>& gap_buffer, const std::string& word)
@@ -129,42 +134,11 @@ auto insert_at_end(std::vector<char>& buffer, const std::string& word)
     buffer.insert(buffer.end(), word.begin(), word.end());
 }
 
-auto insert_at_end(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, const std::string& word)
-{
-    insert_at_end(gap_buffer, word);
-    insert_at_end(buffer, word);
-    validate_buffers(gap_buffer, buffer);
-}
-
-auto insert(GapBuffer<char>& gap_buffer, Position position, const std::string& word)
-{
-    gap_buffer.insert(make_crange(word), position);
-}
-
-auto insert(std::vector<char>& buffer, Position position, const std::string& word)
-{
-    buffer.insert(buffer.begin() + position, word.begin(), word.end());
-}
-
-auto insert_buffer_operation(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, Position position, const std::string& word)
-{
-    insert(gap_buffer, position, word);
-    insert(gap_buffer, position, word);
-    validate_buffers(gap_buffer, buffer);
-}
-
 auto append(GapBuffer<char>& gap_buffer, const std::string& word) { gap_buffer.append(make_crange(word)); }
 
 auto append(std::vector<char>& buffer, const std::string& word)
 {
     buffer.insert(buffer.end(), word.begin(), word.end());
-}
-
-auto append(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, const std::string& word)
-{
-    append(gap_buffer, word);
-    append(buffer, word);
-    validate_buffers(gap_buffer, buffer);
 }
 
 auto remove(GapBuffer<char>& gap_buffer, Position position, Count count) { gap_buffer.remove(position, count); }
@@ -174,34 +148,13 @@ auto remove(std::vector<char>& buffer, Position position, Count count)
     buffer.erase(buffer.begin() + position, buffer.begin() + position + count);
 }
 
-auto remove(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, Position position, Count count)
-{
-    remove(gap_buffer, position, count);
-    remove(buffer, position, count);
-    validate_buffers(gap_buffer, buffer);
-}
-
 auto remove_at_start(GapBuffer<char>& gap_buffer, Count count) { gap_buffer.remove(0, count); }
 
 auto remove_at_start(std::vector<char>& buffer, Count count) { remove(buffer, 0, count); }
 
-auto remove_at_start(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, Count count)
-{
-    remove_at_start(gap_buffer, count);
-    remove_at_start(buffer, count);
-    validate_buffers(gap_buffer, buffer);
-}
-
 auto remove_at_end(GapBuffer<char>& gap_buffer, Count count) { gap_buffer.remove(gap_buffer.size() - count, count); }
 
 auto remove_at_end(std::vector<char>& buffer, Count count) { remove(buffer, buffer.size() - count, count); }
-
-auto remove_at_end(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, Count count)
-{
-    remove_at_end(gap_buffer, count);
-    remove_at_end(buffer, count);
-    validate_buffers(gap_buffer, buffer);
-}
 
 auto replace(GapBuffer<char>& gap_buffer, Position position, Count count, const std::string& word)
 {
@@ -214,13 +167,6 @@ auto replace(std::vector<char>& buffer, Position position, Count count, const st
     buffer.insert(buffer.begin() + position, word.begin(), word.end());
 }
 
-auto replace(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, Position position, Count count, const std::string& word)
-{
-    replace(gap_buffer, position, count, word);
-    replace(buffer, position, count, word);
-    validate_buffers(gap_buffer, buffer);
-}
-
 auto replace_at_start(GapBuffer<char>& gap_buffer, Count count, const std::string& word)
 {
     gap_buffer.replace(0, count, make_crange(word));
@@ -229,13 +175,6 @@ auto replace_at_start(GapBuffer<char>& gap_buffer, Count count, const std::strin
 auto replace_at_start(std::vector<char>& buffer, Count count, const std::string& word)
 {
     replace(buffer, 0, count, word);
-}
-
-auto replace_at_start(GapBuffer<char> gap_buffer, std::vector<char>& buffer, Count count, const std::string& word)
-{
-    replace_at_start(gap_buffer, count, word);
-    replace_at_start(buffer, count, word);
-    validate_buffers(gap_buffer, buffer);
 }
 
 auto replace_at_end(GapBuffer<char>& gap_buffer, Count count, const std::string& word)
@@ -248,12 +187,88 @@ auto replace_at_end(std::vector<char>& buffer, Count count, const std::string& w
     remove(buffer, buffer.size() - count, count);
     buffer.insert(buffer.begin(), word.begin(), word.end());
 }
+}
+
+auto insert(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, Position position, const std::string& word)
+{
+    using detail::insert;
+    insert(gap_buffer, position, word);
+    insert(gap_buffer, position, word);
+    validate_buffers(gap_buffer, buffer);
+}
+
+auto insert_at_start(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, const std::string& word)
+{
+    using detail::insert_at_start;
+    insert_at_start(gap_buffer, word);
+    insert_at_start(buffer, word);
+    validate_buffers(gap_buffer, buffer);
+}
+
+auto insert_at_end(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, const std::string& word)
+{
+    using detail::insert_at_end;
+    insert_at_end(gap_buffer, word);
+    insert_at_end(buffer, word);
+    validate_buffers(gap_buffer, buffer);
+}
+
+auto append(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, const std::string& word)
+{
+    using detail::append;
+    append(gap_buffer, word);
+    append(buffer, word);
+    validate_buffers(gap_buffer, buffer);
+}
+
+auto remove(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, Position position, Count count)
+{
+    using detail::remove;
+    remove(gap_buffer, position, count);
+    remove(buffer, position, count);
+    validate_buffers(gap_buffer, buffer);
+}
+
+auto remove_at_start(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, Count count)
+{
+    using detail::remove_at_start;
+    remove_at_start(gap_buffer, count);
+    remove_at_start(buffer, count);
+    validate_buffers(gap_buffer, buffer);
+}
+
+auto remove_at_end(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, Count count)
+{
+    using detail::remove_at_end;
+    remove_at_end(gap_buffer, count);
+    remove_at_end(buffer, count);
+    validate_buffers(gap_buffer, buffer);
+}
+
+auto replace(
+    GapBuffer<char>& gap_buffer, std::vector<char>& buffer, Position position, Count count, const std::string& word)
+{
+    using detail::replace;
+    replace(gap_buffer, position, count, word);
+    replace(buffer, position, count, word);
+    validate_buffers(gap_buffer, buffer);
+}
+
+auto replace_at_start(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, Count count, const std::string& word)
+{
+    using detail::replace_at_start;
+    replace_at_start(gap_buffer, count, word);
+    replace_at_start(buffer, count, word);
+    validate_buffers(gap_buffer, buffer);
+}
 
 auto replace_at_end(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, Count count, const std::string& word)
 {
+    using detail::replace_at_end;
     replace_at_end(gap_buffer, count, word);
     replace_at_end(buffer, count, word);
     validate_buffers(gap_buffer, buffer);
+}
 }
 
 template <typename RandomEngine> auto make_random_position_generator(RandomEngine& engine)
@@ -293,7 +308,7 @@ using CountWordSignature = Signature<CharGapBuffer, CharBuffer, Count, Word>;
 
 template <typename... Arguments> auto make_signature(void operation(Arguments...))
 {
-    return Signature<std::remove_const_t<std::remove_reference_t<Arguments>>...>{};
+    return Signature<std::remove_const_t<std::remove_reference_t<Arguments> >...>{};
 }
 
 template <typename RandomPositionGenerator, typename RandomCountGenerator, typename RandomWordGenerator,
@@ -302,7 +317,8 @@ auto make_random_buffer_operation(RandomPositionGenerator generate_random_positi
     RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
     BufferOperation operate_on_buffer, PositionWordSignature signature)
 {
-    return [operate_on_buffer, &generate_random_position, &generate_random_word](CharGapBuffer& gap_buffer, CharBuffer& buffer) {
+    return [operate_on_buffer, &generate_random_position, &generate_random_word](
+        CharGapBuffer& gap_buffer, CharBuffer& buffer) {
         const auto word_count = 1;
         const auto position = generate_random_position(gap_buffer.size());
         const auto word = generate_random_word();
@@ -331,7 +347,8 @@ auto make_random_buffer_operation(RandomPositionGenerator generate_random_positi
     RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
     BufferOperation operate_on_buffer, PositionCountSignature signature)
 {
-    return [operate_on_buffer, &generate_random_position, &generate_random_count](CharGapBuffer& gap_buffer, CharBuffer& buffer) {
+    return [operate_on_buffer, &generate_random_position, &generate_random_count](
+        CharGapBuffer& gap_buffer, CharBuffer& buffer) {
         const auto word_count = 0;
         const auto position = generate_random_position(gap_buffer.size());
         const auto count = generate_random_count(gap_buffer.size() - position);
@@ -360,7 +377,8 @@ auto make_random_buffer_operation(RandomPositionGenerator generate_random_positi
     RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
     BufferOperation operate_on_buffer, PositionCountWordSignature signature)
 {
-    return [operate_on_buffer, &generate_random_position, &generate_random_count, &generate_random_word](CharGapBuffer& gap_buffer, CharBuffer& buffer) {
+    return [operate_on_buffer, &generate_random_position, &generate_random_count, &generate_random_word](
+        CharGapBuffer& gap_buffer, CharBuffer& buffer) {
         const auto word_count = 0;
         const auto position = generate_random_position(gap_buffer.size());
         const auto count = generate_random_count(gap_buffer.size() - position);
@@ -376,7 +394,8 @@ auto make_random_buffer_operation(RandomPositionGenerator generate_random_positi
     RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
     BufferOperation operate_on_buffer, CountWordSignature signature)
 {
-    return [operate_on_buffer, &generate_random_count, &generate_random_word](CharGapBuffer& gap_buffer, CharBuffer& buffer) {
+    return [operate_on_buffer, &generate_random_count, &generate_random_word](
+        CharGapBuffer& gap_buffer, CharBuffer& buffer) {
         const auto word_count = 0;
         const auto count = generate_random_count(gap_buffer.size());
         const auto word = generate_random_word();
@@ -392,8 +411,8 @@ auto make_random_buffer_operation(RandomPositionGenerator generate_random_positi
     BufferOperation operate_on_buffer)
 {
     using BufferOperationSignature = decltype(make_signature(operate_on_buffer));
-    return make_random_buffer_operation(
-        generate_random_position, generate_random_count, generate_random_word, operate_on_buffer, BufferOperationSignature{});
+    return make_random_buffer_operation(generate_random_position, generate_random_count, generate_random_word,
+        operate_on_buffer, BufferOperationSignature{});
 }
 
 template <typename RandomPositionGenerator, typename RandomCountGenerator, typename RandomWordGenerator,
@@ -461,8 +480,8 @@ auto make_random_buffer_operation_sequence(RandomPositionGenerator generate_rand
     BufferOperation operate_on_buffer, int sequence_count)
 {
     using BufferOperationSignature = decltype(make_signature(operate_on_buffer));
-    return make_random_buffer_operation_sequence(generate_random_position, generate_random_count,
-        generate_random_word, operate_on_buffer, sequence_count, BufferOperationSignature{});
+    return make_random_buffer_operation_sequence(generate_random_position, generate_random_count, generate_random_word,
+        operate_on_buffer, sequence_count, BufferOperationSignature{});
 }
 
 template <typename RandomPositionGenerator, typename RandomCountGenerator, typename RandomWordGenerator,
@@ -562,7 +581,25 @@ void random_buffer_operations()
     using BufferOperation = std::function<void(CharGapBuffer&, CharBuffer&)>;
     std::vector<BufferOperation> random_buffer_operations;
     random_buffer_operations.push_back(make_random_buffer_operation(
-        generate_random_position, generate_random_count, generate_fair_random_word, insert_buffer_operation));
+        generate_random_position, generate_random_count, generate_fair_random_word, operation::insert));
+    random_buffer_operations.push_back(make_random_buffer_operation(
+        generate_random_position, generate_random_count, generate_fair_random_word, operation::insert_at_start));
+    random_buffer_operations.push_back(make_random_buffer_operation(
+        generate_random_position, generate_random_count, generate_fair_random_word, operation::insert_at_end));
+    random_buffer_operations.push_back(make_random_buffer_operation(
+        generate_random_position, generate_random_count, generate_fair_random_word, operation::append));
+    random_buffer_operations.push_back(make_random_buffer_operation(
+        generate_random_position, generate_random_count, generate_fair_random_word, operation::remove));
+    random_buffer_operations.push_back(make_random_buffer_operation(
+        generate_random_position, generate_random_count, generate_fair_random_word, operation::remove_at_start));
+    random_buffer_operations.push_back(make_random_buffer_operation(
+        generate_random_position, generate_random_count, generate_fair_random_word, operation::remove_at_end));
+    random_buffer_operations.push_back(make_random_buffer_operation(
+        generate_random_position, generate_random_count, generate_fair_random_word, operation::replace));
+    random_buffer_operations.push_back(make_random_buffer_operation(
+        generate_random_position, generate_random_count, generate_fair_random_word, operation::replace_at_start));
+    random_buffer_operations.push_back(make_random_buffer_operation(
+        generate_random_position, generate_random_count, generate_fair_random_word, operation::replace_at_end));
 }
 
 void validate_gap_buffer_content(const GapBuffer<char>& gap_buffer, const std::string& expected_content)
