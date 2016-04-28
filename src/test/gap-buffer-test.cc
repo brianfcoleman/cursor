@@ -313,8 +313,8 @@ template <typename... Arguments> auto make_signature(void operation(Arguments...
 
 template <typename RandomPositionGenerator, typename RandomCountGenerator, typename RandomWordGenerator,
     typename BufferOperation>
-auto make_random_buffer_operation(RandomPositionGenerator generate_random_position,
-    RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
+auto make_random_buffer_operation(RandomPositionGenerator& generate_random_position,
+    RandomCountGenerator& generate_random_count, RandomWordGenerator& generate_random_word,
     BufferOperation operate_on_buffer, PositionWordSignature signature)
 {
     return [operate_on_buffer, &generate_random_position, &generate_random_word](
@@ -329,8 +329,8 @@ auto make_random_buffer_operation(RandomPositionGenerator generate_random_positi
 
 template <typename RandomPositionGenerator, typename RandomCountGenerator, typename RandomWordGenerator,
     typename BufferOperation>
-auto make_random_buffer_operation(RandomPositionGenerator generate_random_position,
-    RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
+auto make_random_buffer_operation(RandomPositionGenerator& generate_random_position,
+    RandomCountGenerator& generate_random_count, RandomWordGenerator& generate_random_word,
     BufferOperation operate_on_buffer, WordSignature signature)
 {
     return [operate_on_buffer, &generate_random_word](CharGapBuffer& gap_buffer, CharBuffer& buffer) {
@@ -343,8 +343,8 @@ auto make_random_buffer_operation(RandomPositionGenerator generate_random_positi
 
 template <typename RandomPositionGenerator, typename RandomCountGenerator, typename RandomWordGenerator,
     typename BufferOperation>
-auto make_random_buffer_operation(RandomPositionGenerator generate_random_position,
-    RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
+auto make_random_buffer_operation(RandomPositionGenerator& generate_random_position,
+    RandomCountGenerator& generate_random_count, RandomWordGenerator& generate_random_word,
     BufferOperation operate_on_buffer, PositionCountSignature signature)
 {
     return [operate_on_buffer, &generate_random_position, &generate_random_count](
@@ -359,8 +359,8 @@ auto make_random_buffer_operation(RandomPositionGenerator generate_random_positi
 
 template <typename RandomPositionGenerator, typename RandomCountGenerator, typename RandomWordGenerator,
     typename BufferOperation>
-auto make_random_buffer_operation(RandomPositionGenerator generate_random_position,
-    RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
+auto make_random_buffer_operation(RandomPositionGenerator& generate_random_position,
+    RandomCountGenerator& generate_random_count, RandomWordGenerator& generate_random_word,
     BufferOperation operate_on_buffer, CountSignature signature)
 {
     return [operate_on_buffer, &generate_random_count](CharGapBuffer& gap_buffer, CharBuffer& buffer) {
@@ -373,8 +373,8 @@ auto make_random_buffer_operation(RandomPositionGenerator generate_random_positi
 
 template <typename RandomPositionGenerator, typename RandomCountGenerator, typename RandomWordGenerator,
     typename BufferOperation>
-auto make_random_buffer_operation(RandomPositionGenerator generate_random_position,
-    RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
+auto make_random_buffer_operation(RandomPositionGenerator& generate_random_position,
+    RandomCountGenerator& generate_random_count, RandomWordGenerator& generate_random_word,
     BufferOperation operate_on_buffer, PositionCountWordSignature signature)
 {
     return [operate_on_buffer, &generate_random_position, &generate_random_count, &generate_random_word](
@@ -390,8 +390,8 @@ auto make_random_buffer_operation(RandomPositionGenerator generate_random_positi
 
 template <typename RandomPositionGenerator, typename RandomCountGenerator, typename RandomWordGenerator,
     typename BufferOperation>
-auto make_random_buffer_operation(RandomPositionGenerator generate_random_position,
-    RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
+auto make_random_buffer_operation(RandomPositionGenerator& generate_random_position,
+    RandomCountGenerator& generate_random_count, RandomWordGenerator& generate_random_word,
     BufferOperation operate_on_buffer, CountWordSignature signature)
 {
     return [operate_on_buffer, &generate_random_count, &generate_random_word](
@@ -406,8 +406,8 @@ auto make_random_buffer_operation(RandomPositionGenerator generate_random_positi
 
 template <typename RandomPositionGenerator, typename RandomCountGenerator, typename RandomWordGenerator,
     typename BufferOperation>
-auto make_random_buffer_operation(RandomPositionGenerator generate_random_position,
-    RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
+auto make_random_buffer_operation(RandomPositionGenerator& generate_random_position,
+    RandomCountGenerator& generate_random_count, RandomWordGenerator& generate_random_word,
     BufferOperation operate_on_buffer)
 {
     using BufferOperationSignature = decltype(make_signature(operate_on_buffer));
@@ -417,8 +417,8 @@ auto make_random_buffer_operation(RandomPositionGenerator generate_random_positi
 
 template <typename RandomPositionGenerator, typename RandomCountGenerator, typename RandomWordGenerator,
     typename BufferOperation>
-auto make_random_buffer_operation_sequence(RandomPositionGenerator generate_random_position,
-    RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
+auto make_random_buffer_operation_sequence(RandomPositionGenerator& generate_random_position,
+    RandomCountGenerator& generate_random_count, RandomWordGenerator& generate_random_word,
     BufferOperation operate_on_buffer, int sequence_count, PositionWordSignature signature)
 {
     return [operate_on_buffer, sequence_count, &generate_random_position, &generate_random_word](
@@ -436,8 +436,8 @@ auto make_random_buffer_operation_sequence(RandomPositionGenerator generate_rand
 
 template <typename RandomPositionGenerator, typename RandomCountGenerator, typename RandomWordGenerator,
     typename BufferOperation>
-auto make_random_buffer_operation_sequence(RandomPositionGenerator generate_random_position,
-    RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
+auto make_random_buffer_operation_sequence(RandomPositionGenerator& generate_random_position,
+    RandomCountGenerator& generate_random_count, RandomWordGenerator& generate_random_word,
     BufferOperation operate_on_buffer, int sequence_count, PositionCountSignature signature)
 {
     return [operate_on_buffer, sequence_count, &generate_random_position, &generate_random_count](
@@ -455,8 +455,8 @@ auto make_random_buffer_operation_sequence(RandomPositionGenerator generate_rand
 
 template <typename RandomPositionGenerator, typename RandomCountGenerator, typename RandomWordGenerator,
     typename BufferOperation>
-auto make_random_buffer_operation_sequence(RandomPositionGenerator generate_random_position,
-    RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
+auto make_random_buffer_operation_sequence(RandomPositionGenerator& generate_random_position,
+    RandomCountGenerator& generate_random_count, RandomWordGenerator& generate_random_word,
     BufferOperation operate_on_buffer, int sequence_count, PositionCountWordSignature signature)
 {
     return [operate_on_buffer, sequence_count, &generate_random_position, &generate_random_count,
@@ -475,8 +475,8 @@ auto make_random_buffer_operation_sequence(RandomPositionGenerator generate_rand
 
 template <typename RandomPositionGenerator, typename RandomCountGenerator, typename RandomWordGenerator,
     typename BufferOperation>
-auto make_random_buffer_operation_sequence(RandomPositionGenerator generate_random_position,
-    RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
+auto make_random_buffer_operation_sequence(RandomPositionGenerator& generate_random_position,
+    RandomCountGenerator& generate_random_count, RandomWordGenerator& generate_random_word,
     BufferOperation operate_on_buffer, int sequence_count)
 {
     using BufferOperationSignature = decltype(make_signature(operate_on_buffer));
@@ -486,8 +486,8 @@ auto make_random_buffer_operation_sequence(RandomPositionGenerator generate_rand
 
 template <typename RandomPositionGenerator, typename RandomCountGenerator, typename RandomWordGenerator,
     typename BufferOperation>
-auto make_random_buffer_operation_sequences(RandomPositionGenerator generate_random_position,
-    RandomCountGenerator generate_random_count, RandomWordGenerator& generate_random_word,
+auto make_random_buffer_operation_sequences(RandomPositionGenerator& generate_random_position,
+    RandomCountGenerator& generate_random_count, RandomWordGenerator& generate_random_word,
     BufferOperation operate_on_buffer, int min_sequence_count, int max_sequence_count)
 {
     using BufferOperationSignature = decltype(make_signature(operate_on_buffer));
@@ -609,18 +609,19 @@ void random_buffer_modifications()
     auto generate_random_count = make_random_count_generator(random_engine);
     auto random_buffer_operations
         = make_random_buffer_operations(generate_random_position, generate_random_count, generate_fair_random_word);
-    const auto buffer_operation_count = total_word_count / random_buffer_operations.size();
+    const auto buffer_operation_count = random_buffer_operations.size();
+    const auto total_buffer_operation_count = total_word_count / random_buffer_operations.size();
     auto choose_random_buffer_operation
         = [random_buffer_operations = std::move(random_buffer_operations)](int buffer_operation_key)
     {
         return random_buffer_operations.at(buffer_operation_key);
     };
     auto choose_fair_random_buffer_operation = make_fair_random_distribution(
-        random_engine, choose_random_buffer_operation, random_buffer_operations.size(), buffer_operation_count);
+        random_engine, choose_random_buffer_operation, buffer_operation_count, total_buffer_operation_count);
     CharGapBuffer gap_buffer;
     CharBuffer buffer;
-    auto generated_word_count = 0;
-    for (auto count = 0; count < buffer_operation_count; ++count) {
+    int generated_word_count = 0;
+    for (auto count = 0; count < total_buffer_operation_count; ++count) {
         auto operate_on_buffer = choose_fair_random_buffer_operation();
         generated_word_count += operate_on_buffer(gap_buffer, buffer);
     }
