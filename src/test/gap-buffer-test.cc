@@ -422,11 +422,12 @@ auto make_random_buffer_operation_sequence(RandomPositionGenerator& generate_ran
     return [operate_on_buffer, sequence_count, &generate_random_position, &generate_random_word](
         CharGapBuffer& gap_buffer, CharBuffer& buffer) {
         const auto word_count = sequence_count;
-        auto position = generate_random_position(gap_buffer.size());
-        for (auto count = 0; count < sequence_count; ++count) {
+        using size_type = CharGapBuffer::size_type;
+        size_type position = generate_random_position(gap_buffer.size());
+        for (auto counter = 0; counter < sequence_count; ++counter) {
             const auto word = generate_random_word();
             operate_on_buffer(gap_buffer, buffer, position, word);
-            position = std::min(position + word.size(), gap_buffer.size());
+            position = std::min(static_cast<size_type>(position + word.size()), gap_buffer.size());
         }
         return word_count;
     };
@@ -441,12 +442,12 @@ auto make_random_buffer_operation_sequence(RandomPositionGenerator& generate_ran
     return [operate_on_buffer, sequence_count, &generate_random_position, &generate_random_count](
         CharGapBuffer& gap_buffer, CharBuffer& buffer) {
         const auto word_count = 0;
-        auto position = generate_random_position(gap_buffer.size());
-        repeat([operate_on_buffer, &generate_random_count, &position, &gap_buffer, &buffer] {
-            const auto count = generate_random_count(gap_buffer.size() - position);
+        using size_type = CharGapBuffer::size_type;
+        const size_type position = generate_random_position(gap_buffer.size());
+        for (auto counter = 0; counter < sequence_count; ++counter) {
+            const size_type count = generate_random_count(gap_buffer.size() - position);
             operate_on_buffer(gap_buffer, buffer, position, count);
-            position = std::min(position + count, gap_buffer.size());
-        }, sequence_count);
+        }
         return word_count;
     };
 }
@@ -460,13 +461,15 @@ auto make_random_buffer_operation_sequence(RandomPositionGenerator& generate_ran
     return [operate_on_buffer, sequence_count, &generate_random_position, &generate_random_count,
         &generate_random_word](CharGapBuffer& gap_buffer, CharBuffer& buffer) {
         const auto word_count = 0;
-        auto position = generate_random_position(gap_buffer.size());
-        repeat([operate_on_buffer, &generate_random_count, &generate_random_word, &position, &gap_buffer, &buffer] {
-            const auto count = generate_random_count(gap_buffer.size() - position);
+        using size_type = CharGapBuffer::size_type;
+        size_type position = generate_random_position(gap_buffer.size());
+        for (auto counter = 0; counter < sequence_count; ++counter) {
+            const size_type count = generate_random_count(gap_buffer.size() - position);
             const auto word = generate_random_word();
             operate_on_buffer(gap_buffer, buffer, position, count, word);
-            position = std::min(position + count, gap_buffer.size());
-        }, sequence_count);
+            position = std::min(static_cast<size_type>(position + word.size()), gap_buffer.size());
+
+        }
         return word_count;
     };
 }
@@ -490,7 +493,7 @@ auto make_random_buffer_operation_sequences(RandomPositionGenerator& generate_ra
 {
     using BufferOperationSignature = decltype(make_signature(operate_on_buffer));
     const auto sequences_count = max_sequence_count - min_sequence_count + 1;
-    std::vector<std::function<void(CharGapBuffer&, CharBuffer&)> > sequences;
+    std::vector<std::function<int(CharGapBuffer&, CharBuffer&)> > sequences;
     for (auto sequence_count = min_sequence_count; sequence_count <= max_sequence_count; ++sequence_count) {
         sequences.push_back(make_random_buffer_operation_sequence(generate_random_position, generate_random_count,
             generate_random_word, operate_on_buffer, sequence_count, BufferOperationSignature{}));
@@ -541,7 +544,7 @@ auto make_fair_random_distribution(
 }
 
 template <typename RandomPositionGenerator, typename RandomCountGenerator, typename RandomWordGenerator>
-auto make_random_buffer_operations(RandomPositionGenerator& generate_random_position,
+auto make_all_random_buffer_operations(RandomPositionGenerator& generate_random_position,
     RandomCountGenerator& generate_random_count, RandomWordGenerator& generate_random_word)
 {
     using BufferOperation = std::function<int(CharGapBuffer&, CharBuffer&)>;
@@ -566,6 +569,30 @@ auto make_random_buffer_operations(RandomPositionGenerator& generate_random_posi
         generate_random_position, generate_random_count, generate_random_word, operation::replace_at_start));
     random_buffer_operations.push_back(make_random_buffer_operation(
         generate_random_position, generate_random_count, generate_random_word, operation::replace_at_end));
+    return random_buffer_operations;
+}
+
+template<typename Container>
+auto append(Container& dst, const Container& src) {
+    dst.insert(dst.end(), src.begin(), src.end());
+}
+
+template <typename RandomPositionGenerator, typename RandomCountGenerator, typename RandomWordGenerator>
+auto make_all_random_buffer_operation_sequences(RandomPositionGenerator& generate_random_position,
+    RandomCountGenerator& generate_random_count, RandomWordGenerator& generate_random_word, int min_sequence_count,
+    int max_sequence_count)
+{
+    using BufferOperation = std::function<int(CharGapBuffer&, CharBuffer&)>;
+    std::vector<BufferOperation> random_buffer_operations;
+    append(random_buffer_operations,
+        make_random_buffer_operation_sequences(generate_random_position, generate_random_count, generate_random_word,
+               operation::insert, min_sequence_count, max_sequence_count));
+    append(random_buffer_operations,
+        make_random_buffer_operation_sequences(generate_random_position, generate_random_count, generate_random_word,
+               operation::remove, min_sequence_count, max_sequence_count));
+    append(random_buffer_operations,
+        make_random_buffer_operation_sequences(generate_random_position, generate_random_count, generate_random_word,
+               operation::replace, min_sequence_count, max_sequence_count));
     return random_buffer_operations;
 }
 }
@@ -606,7 +633,44 @@ void random_buffer_modifications()
     auto generate_random_position = make_random_position_generator(random_engine);
     auto generate_random_count = make_random_count_generator(random_engine);
     auto random_buffer_operations
-        = make_random_buffer_operations(generate_random_position, generate_random_count, generate_fair_random_word);
+        = make_all_random_buffer_operations(generate_random_position, generate_random_count, generate_fair_random_word);
+    const auto buffer_operation_count = random_buffer_operations.size();
+    const auto total_buffer_operation_count = total_word_count / random_buffer_operations.size();
+    auto choose_random_buffer_operation
+        = [random_buffer_operations = std::move(random_buffer_operations)](int buffer_operation_key)
+    {
+        return random_buffer_operations.at(buffer_operation_key);
+    };
+    auto choose_fair_random_buffer_operation = make_fair_random_distribution(
+        random_engine, choose_random_buffer_operation, buffer_operation_count, total_buffer_operation_count);
+    CharGapBuffer gap_buffer;
+    CharBuffer buffer;
+    int generated_word_count = 0;
+    for (auto count = 0; count < total_buffer_operation_count; ++count) {
+        auto operate_on_buffer = choose_fair_random_buffer_operation();
+        generated_word_count += operate_on_buffer(gap_buffer, buffer);
+        ASSERT_TRUE(validate_buffers(gap_buffer, buffer));
+    }
+    ASSERT_TRUE(generated_word_count <= total_word_count);
+}
+
+void random_sequential_buffer_modifications()
+{
+    std::mt19937 random_engine;
+    int min_word_size = 0;
+    int max_word_size = 7;
+    int word_size_count = max_word_size - min_word_size + 1;
+    auto generate_random_word = make_random_word_generators(random_engine, alphabet(), min_word_size, max_word_size);
+    int word_count = 8092;
+    auto generate_fair_random_word
+        = make_fair_random_distribution(random_engine, generate_random_word, word_size_count, word_count);
+    int total_word_count = word_count * word_size_count;
+    auto generate_random_position = make_random_position_generator(random_engine);
+    auto generate_random_count = make_random_count_generator(random_engine);
+    int min_sequence_count = 1;
+    int max_sequence_count = 8;
+    auto random_buffer_operations = make_all_random_buffer_operation_sequences(generate_random_position,
+        generate_random_count, generate_fair_random_word, min_sequence_count, max_sequence_count);
     const auto buffer_operation_count = random_buffer_operations.size();
     const auto total_buffer_operation_count = total_word_count / random_buffer_operations.size();
     auto choose_random_buffer_operation
@@ -733,6 +797,11 @@ TEST(gap_buffer, size) { cursor::test::gap_buffer::size(); }
 TEST(random_word_generator, generate_random_words) { cursor::test::gap_buffer::generate_random_words(); }
 
 TEST(gap_buffer, random_buffer_modifications) { cursor::test::gap_buffer::random_buffer_modifications(); }
+
+TEST(gap_buffer, random_sequential_buffer_modifications)
+{
+    cursor::test::gap_buffer::random_sequential_buffer_modifications();
+}
 
 int main(int argc, char* argv[])
 {
