@@ -1,6 +1,8 @@
 #include "gap-buffer.hh"
 #include "range.hh"
 
+#include <boost/format.hpp>
+
 #include <gtest/gtest.h>
 
 #include <algorithm>
@@ -99,10 +101,16 @@ auto to_string(const std::vector<char>& buffer)
 
 auto validate_buffers(const GapBuffer<char>& gap_buffer, const std::vector<char>& buffer)
 {
-    ASSERT_EQ(buffer.size(), gap_buffer.size());
     const auto gap_buffer_content = to_string(gap_buffer);
     const auto buffer_content = to_string(buffer);
-    ASSERT_EQ(gap_buffer_content, buffer_content);
+    EXPECT_EQ(buffer.size(), gap_buffer.size()) << boost::format("buffer: [%1%](%2%), gap_buffer: [%3%](%4%)")
+            % buffer_content % buffer.size() % gap_buffer_content % gap_buffer.size();
+    if (buffer.size() != gap_buffer.size()) {
+        return false;
+    }
+    EXPECT_EQ(buffer_content, gap_buffer_content) << boost::format("buffer: [%1%](%2%), gap_buffer: [%3%](%4%)")
+            % buffer_content % buffer.size() % gap_buffer_content % gap_buffer.size();
+    return buffer_content == gap_buffer_content;
 }
 
 namespace operation {
@@ -185,7 +193,7 @@ auto replace_at_end(GapBuffer<char>& gap_buffer, Count count, const std::string&
 auto replace_at_end(std::vector<char>& buffer, Count count, const std::string& word)
 {
     remove(buffer, buffer.size() - count, count);
-    buffer.insert(buffer.begin(), word.begin(), word.end());
+    buffer.insert(buffer.end(), word.begin(), word.end());
 }
 }
 
@@ -193,8 +201,7 @@ auto insert(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, Position pos
 {
     using detail::insert;
     insert(gap_buffer, position, word);
-    insert(gap_buffer, position, word);
-    validate_buffers(gap_buffer, buffer);
+    insert(buffer, position, word);
 }
 
 auto insert_at_start(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, const std::string& word)
@@ -202,7 +209,6 @@ auto insert_at_start(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, con
     using detail::insert_at_start;
     insert_at_start(gap_buffer, word);
     insert_at_start(buffer, word);
-    validate_buffers(gap_buffer, buffer);
 }
 
 auto insert_at_end(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, const std::string& word)
@@ -210,7 +216,6 @@ auto insert_at_end(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, const
     using detail::insert_at_end;
     insert_at_end(gap_buffer, word);
     insert_at_end(buffer, word);
-    validate_buffers(gap_buffer, buffer);
 }
 
 auto append(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, const std::string& word)
@@ -218,7 +223,6 @@ auto append(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, const std::s
     using detail::append;
     append(gap_buffer, word);
     append(buffer, word);
-    validate_buffers(gap_buffer, buffer);
 }
 
 auto remove(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, Position position, Count count)
@@ -226,7 +230,6 @@ auto remove(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, Position pos
     using detail::remove;
     remove(gap_buffer, position, count);
     remove(buffer, position, count);
-    validate_buffers(gap_buffer, buffer);
 }
 
 auto remove_at_start(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, Count count)
@@ -234,7 +237,6 @@ auto remove_at_start(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, Cou
     using detail::remove_at_start;
     remove_at_start(gap_buffer, count);
     remove_at_start(buffer, count);
-    validate_buffers(gap_buffer, buffer);
 }
 
 auto remove_at_end(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, Count count)
@@ -242,7 +244,6 @@ auto remove_at_end(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, Count
     using detail::remove_at_end;
     remove_at_end(gap_buffer, count);
     remove_at_end(buffer, count);
-    validate_buffers(gap_buffer, buffer);
 }
 
 auto replace(
@@ -251,7 +252,6 @@ auto replace(
     using detail::replace;
     replace(gap_buffer, position, count, word);
     replace(buffer, position, count, word);
-    validate_buffers(gap_buffer, buffer);
 }
 
 auto replace_at_start(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, Count count, const std::string& word)
@@ -259,7 +259,6 @@ auto replace_at_start(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, Co
     using detail::replace_at_start;
     replace_at_start(gap_buffer, count, word);
     replace_at_start(buffer, count, word);
-    validate_buffers(gap_buffer, buffer);
 }
 
 auto replace_at_end(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, Count count, const std::string& word)
@@ -267,7 +266,6 @@ auto replace_at_end(GapBuffer<char>& gap_buffer, std::vector<char>& buffer, Coun
     using detail::replace_at_end;
     replace_at_end(gap_buffer, count, word);
     replace_at_end(buffer, count, word);
-    validate_buffers(gap_buffer, buffer);
 }
 }
 
@@ -624,15 +622,16 @@ void random_buffer_modifications()
     for (auto count = 0; count < total_buffer_operation_count; ++count) {
         auto operate_on_buffer = choose_fair_random_buffer_operation();
         generated_word_count += operate_on_buffer(gap_buffer, buffer);
+        ASSERT_TRUE(validate_buffers(gap_buffer, buffer));
     }
-    validate_buffers(gap_buffer, buffer);
     ASSERT_TRUE(generated_word_count <= total_word_count);
 }
 
-void validate_gap_buffer_content(const GapBuffer<char>& gap_buffer, const std::string& expected_content)
+auto validate_gap_buffer_content(const GapBuffer<char>& gap_buffer, const std::string& expected_content)
 {
     const auto gap_buffer_content = to_string(gap_buffer);
-    ASSERT_EQ(expected_content, gap_buffer_content);
+    EXPECT_EQ(expected_content, gap_buffer_content);
+    return gap_buffer_content == expected_content;
 }
 
 void insert_before_position()
@@ -640,7 +639,7 @@ void insert_before_position()
     GapBuffer<char> gap_buffer;
     std::string content = "Hello World!";
     gap_buffer.insert(make_crange(content), 0);
-    validate_gap_buffer_content(gap_buffer, content);
+    ASSERT_TRUE(validate_gap_buffer_content(gap_buffer, content));
 }
 
 void insert_before_iterator()
@@ -648,7 +647,7 @@ void insert_before_iterator()
     GapBuffer<char> gap_buffer;
     std::string content = "Hello World!";
     gap_buffer.insert(make_crange(content), gap_buffer.cbegin());
-    validate_gap_buffer_content(gap_buffer, content);
+    ASSERT_TRUE(validate_gap_buffer_content(gap_buffer, content));
 }
 
 void append()
@@ -656,7 +655,7 @@ void append()
     GapBuffer<char> gap_buffer;
     std::string content = "Hello World!";
     gap_buffer.append(make_crange(content));
-    validate_gap_buffer_content(gap_buffer, content);
+    ASSERT_TRUE(validate_gap_buffer_content(gap_buffer, content));
 }
 
 void remove_at_position()
@@ -664,10 +663,10 @@ void remove_at_position()
     GapBuffer<char> gap_buffer;
     std::string content = "Hello World";
     gap_buffer.append(content);
-    validate_gap_buffer_content(gap_buffer, content);
+    ASSERT_TRUE(validate_gap_buffer_content(gap_buffer, content));
     gap_buffer.remove(0, content.size());
     content = "";
-    validate_gap_buffer_content(gap_buffer, content);
+    ASSERT_TRUE(validate_gap_buffer_content(gap_buffer, content));
 }
 
 void remove_at_iterator()
@@ -675,10 +674,10 @@ void remove_at_iterator()
     GapBuffer<char> gap_buffer;
     std::string content = "Hello World!";
     gap_buffer.append(content);
-    validate_gap_buffer_content(gap_buffer, content);
+    ASSERT_TRUE(validate_gap_buffer_content(gap_buffer, content));
     gap_buffer.remove(make_crange(gap_buffer));
     content = "";
-    validate_gap_buffer_content(gap_buffer, content);
+    ASSERT_TRUE(validate_gap_buffer_content(gap_buffer, content));
 }
 
 void replace_at_position()
@@ -686,10 +685,10 @@ void replace_at_position()
     GapBuffer<char> gap_buffer;
     std::string content = "Hello World!";
     gap_buffer.append(content);
-    validate_gap_buffer_content(gap_buffer, content);
+    ASSERT_TRUE(validate_gap_buffer_content(gap_buffer, content));
     std::string new_content = "Goodbye World!";
     gap_buffer.replace(0, content.size(), make_crange(new_content));
-    validate_gap_buffer_content(gap_buffer, new_content);
+    ASSERT_TRUE(validate_gap_buffer_content(gap_buffer, new_content));
 }
 
 void replace_at_iterator()
@@ -697,10 +696,10 @@ void replace_at_iterator()
     GapBuffer<char> gap_buffer;
     std::string content = "Hello World!";
     gap_buffer.append(content);
-    validate_gap_buffer_content(gap_buffer, content);
+    ASSERT_TRUE(validate_gap_buffer_content(gap_buffer, content));
     std::string new_content = "Goodbye World!";
     gap_buffer.replace(make_crange(gap_buffer), make_crange(new_content));
-    validate_gap_buffer_content(gap_buffer, new_content);
+    ASSERT_TRUE(validate_gap_buffer_content(gap_buffer, new_content));
 }
 
 void size()
@@ -708,7 +707,7 @@ void size()
     GapBuffer<char> gap_buffer;
     std::string content = "Hello World!";
     gap_buffer.append(content);
-    validate_gap_buffer_content(gap_buffer, content);
+    ASSERT_TRUE(validate_gap_buffer_content(gap_buffer, content));
     ASSERT_EQ(content.size(), gap_buffer.size());
 }
 }

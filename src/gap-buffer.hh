@@ -249,7 +249,7 @@ private:
         if (new_gap_position < gap_position) {
             std::copy(new_gap_begin, gap_begin, new_gap_end);
         } else {
-            std::copy(gap_end, new_gap_begin, gap_begin);
+            std::copy(gap_end, new_gap_end, gap_begin);
         }
 
         gap_position = new_gap_position;
@@ -265,7 +265,7 @@ private:
         while (new_buffer_size <= min_buffer_size) {
             new_buffer_size *= 2;
         }
-        const auto new_gap_size = new_buffer_size - buffer_size;
+        const auto new_gap_size = new_buffer_size - (buffer_size - gap_size);
 
         auto new_buffer = std::make_unique<Element[]>(new_buffer_size);
 
